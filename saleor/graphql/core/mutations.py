@@ -17,6 +17,7 @@ from graphql_jwt import ObtainJSONWebToken, Verify
 from graphql_jwt.exceptions import JSONWebTokenError, PermissionDenied
 
 from ...account import models
+from ...core.permissions import AccountPermissions
 from ..account.types import User
 from ..utils import get_nodes
 from .types import Error, Upload
@@ -269,8 +270,10 @@ class BaseMutation(graphene.Mutation):
         if context.user.has_perms(permissions):
             return True
         service_account = getattr(context, "service_account", None)
-        if service_account and service_account.has_perms(permissions):
-            return True
+        if service_account:
+            if AccountPermissions.MANAGE_STAFF in permissions:
+                return False
+            return service_account.has_perms(permissions)
         return False
 
     @classmethod
